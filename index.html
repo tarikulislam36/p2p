@@ -1,19 +1,22 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <title>PeerJS Video Call Example</title>
 </head>
+
 <body>
     <h1>PeerJS Video Call Example</h1>
 
     <input type="text" id="localpeerId" readonly style="width: 90%;">
     <br><br>
-    <video id="localVideo" autoplay playsinline style="max-width: 300px;"></video>
+    <video id="localVideo" autoplay playsinline muted style="max-width: 300px;"></video>
     <video id="remoteVideo" autoplay playsinline style="max-width: 300px;"></video>
     <div>
         <label for="remotePeerId">Remote Peer ID:</label>
         <input type="text" id="remotePeerId">
         <button onclick="callPeer()">Call</button>
+        <button onclick="switchCamera()">Switch Camera</button>
     </div>
 
     <script src="https://unpkg.com/peerjs@1.5.1/dist/peerjs.min.js"></script>
@@ -22,6 +25,9 @@
         const remoteVideo = document.getElementById('remoteVideo');
         const remotePeerIdInput = document.getElementById('remotePeerId');
         const inputlocalpeerId = document.getElementById("localpeerId");
+
+        let currentStream;
+        let currentVideoSource = "user"; // Default to front camera
 
         const peer = new Peer();
 
@@ -34,53 +40,54 @@
             console.log('Error: ' + error);
         });
 
-        const getUserMedia = navigator.mediaDevices.getUserMedia;
+        function getMedia(videoSource) {
+            const constraints = {
+                video: { facingMode: videoSource },
+                audio: true
+            };
+            return navigator.mediaDevices.getUserMedia(constraints);
+        }
 
-        // Get local media stream
-        getUserMedia({ video: true, audio: true }).then((stream) => {
-            // Show local video
-            localVideo.srcObject = stream;
-
-            peer.on('call', (call) => {
-                console.log('Incoming call...');
-                call.answer(stream); // Answer the call with the local stream
-                call.on('stream', (remoteStream) => {
-                    remoteVideo.srcObject = remoteStream;  // Show remote video
-                });
-
-                // Handle ICE candidates
-                call.on('iceCandidate', (candidate) => {
-                    if (candidate) {
-                        console.log('Sending ICE Candidate:', candidate);
-                        peer.signal(candidate);  // Forward ICE candidate to the other peer
-                    }
-                });
+        function startLocalStream() {
+            getMedia(currentVideoSource).then((stream) => {
+                if (currentStream) {
+                    currentStream.getTracks().forEach(track => track.stop());
+                }
+                currentStream = stream;
+                localVideo.srcObject = stream;
+            }).catch((err) => {
+                console.log('Failed to get local stream', err);
             });
-        }).catch((err) => {
-            console.log('Failed to get local stream', err);
+        }
+
+        startLocalStream();
+
+        peer.on('call', (call) => {
+            console.log('Incoming call...');
+            call.answer(currentStream); // Answer the call with the local stream
+            call.on('stream', (remoteStream) => {
+                remoteVideo.srcObject = remoteStream; // Show remote video
+            });
         });
 
-        // Start call
         function callPeer() {
             const remotePeerId = remotePeerIdInput.value;
-            getUserMedia({ video: true, audio: true }).then((stream) => {
-                const call = peer.call(remotePeerId, stream);  // Initiate call
+            getMedia(currentVideoSource).then((stream) => {
+                currentStream = stream;
+                const call = peer.call(remotePeerId, stream);
                 call.on('stream', (remoteStream) => {
-                    remoteVideo.srcObject = remoteStream;  // Show remote video
-                });
-
-                // Handle ICE candidates
-                call.on('iceCandidate', (candidate) => {
-                    if (candidate) {
-                        console.log('Sending ICE Candidate:', candidate);
-                        peer.signal(candidate);  // Forward ICE candidate
-                    }
+                    remoteVideo.srcObject = remoteStream;
                 });
             }).catch((err) => {
                 console.log('Failed to get local stream', err);
             });
         }
 
+        function switchCamera() {
+            currentVideoSource = currentVideoSource === "user" ? "environment" : "user";
+            startLocalStream();
+        }
     </script>
 </body>
+
 </html>
