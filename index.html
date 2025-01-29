@@ -3,20 +3,26 @@
 
 <head>
     <title>PeerJS Video Call Example</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
 
-<body>
-    <h1>PeerJS Video Call Example</h1>
+<body class="bg-gray-900 text-white flex flex-col items-center justify-center min-h-screen">
+    <h1 class="text-2xl font-bold mb-4">PeerJS Video Call Example</h1>
 
-    <input type="text" id="localpeerId" readonly style="width: 90%;">
-    <br><br>
-    <video id="localVideo" autoplay playsinline muted style="max-width: 300px;"></video>
-    <video id="remoteVideo" autoplay playsinline style="max-width: 300px;"></video>
-    <div>
-        <label for="remotePeerId">Remote Peer ID:</label>
-        <input type="text" id="remotePeerId">
-        <button onclick="callPeer()">Call</button>
-        <button onclick="switchCamera()">Switch Camera</button>
+    <input type="text" id="localpeerId" readonly class="w-3/4 p-2 text-black rounded mb-4">
+    
+    <div class="flex space-x-4 mb-4">
+        <video id="localVideo" autoplay playsinline muted class="w-64 h-40 bg-gray-800 rounded-lg"></video>
+        <video id="remoteVideo" autoplay playsinline class="w-64 h-40 bg-gray-800 rounded-lg"></video>
+    </div>
+    
+    <div class="flex flex-col items-center space-y-2">
+        <label for="remotePeerId" class="text-lg">Remote Peer ID:</label>
+        <input type="text" id="remotePeerId" class="p-2 text-black rounded w-64">
+        <div class="flex space-x-2 mt-2">
+            <button onclick="callPeer()" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Call</button>
+            <button onclick="switchCamera()" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">Switch Camera</button>
+        </div>
     </div>
 
     <script src="https://unpkg.com/peerjs@1.5.1/dist/peerjs.min.js"></script>
@@ -25,10 +31,10 @@
         const remoteVideo = document.getElementById('remoteVideo');
         const remotePeerIdInput = document.getElementById('remotePeerId');
         const inputlocalpeerId = document.getElementById("localpeerId");
-
+        
         let currentStream;
-        let currentVideoSource = "user"; // Default to front camera
-
+        let currentVideoSource = "user";
+        
         const peer = new Peer();
 
         peer.on('open', (id) => {
@@ -64,9 +70,9 @@
 
         peer.on('call', (call) => {
             console.log('Incoming call...');
-            call.answer(currentStream); // Answer the call with the local stream
+            call.answer(currentStream);
             call.on('stream', (remoteStream) => {
-                remoteVideo.srcObject = remoteStream; // Show remote video
+                remoteVideo.srcObject = remoteStream;
             });
         });
 
